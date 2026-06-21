@@ -6,6 +6,7 @@ export default function Login() {
   const [modo, setModo] = useState('entrar') // 'entrar' | 'cadastrar'
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
+  const [nome, setNome] = useState('')
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -20,11 +21,11 @@ export default function Login() {
       const { error } = await entrar(email, senha)
       if (error) setErro('E-mail ou senha incorretos.')
     } else {
-      const { error } = await cadastrar(email, senha)
+      const { error } = await cadastrar(email, senha, nome.trim())
       if (error) {
         setErro(error.message)
       } else {
-        setSucesso('Conta criada. Você já pode entrar — peça ao administrador para liberar seu acesso, se necessário.')
+        setSucesso('Conta criada. Você já pode entrar.')
         setModo('entrar')
       }
     }
@@ -43,6 +44,19 @@ export default function Login() {
         {sucesso && <div className="aviso-sucesso">{sucesso}</div>}
 
         <form onSubmit={aoEnviar}>
+          {modo === 'cadastrar' && (
+            <div className="campo">
+              <label htmlFor="nome">Nome (igual ao GCM no painel)</label>
+              <input
+                id="nome"
+                type="text"
+                required
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Digite exatamente como aparece na coluna GCM"
+              />
+            </div>
+          )}
           <div className="campo">
             <label htmlFor="email">E-mail</label>
             <input
