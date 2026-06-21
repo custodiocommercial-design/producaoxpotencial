@@ -33,40 +33,71 @@ export function useDadosPainel() {
     carregar()
   }, [carregar])
 
-  // Consolida por código de loja (DN / FILIAL / DEALER são o mesmo código)
-  const linhasConsolidadas = consolidar(potencial, lojas, producao)
+  // Consolida a partir de Lojas (cadastro base), cruzando com Potencial pelo
+  // CNPJ e com Produção pelo código DN.
+  const linhasConsolidadas = consolidar(lojas, potencial, producao)
 
   return { potencial, lojas, producao, metaMeses, linhasConsolidadas, carregando, recarregar: carregar }
 }
 
-function consolidar(potencial, lojas, producao) {
-  const mapaLojas = new Map(lojas.map((l) => [String(l.filial), l]))
+function somenteDigitos(texto) {
+  return String(texto || '').replace(/\D/g, '')
+}
 
-  const producaoPorLojaEMes = new Map() // chave: codigo|mesPosicao -> { valor, quantidade }
-  for (const p of producao) {
-    const chave = `${p.dealer}|${p.mes_posicao}`
-    const atual = producaoPorLojaEMes.get(chave) || { valor: 0, quantidade: 0 }
-    atual.valor += Number(p.vlr_financiado) || 0
-    atual.quantidade += Number(p.quant) || 0
-    producaoPorLojaEMes.set(chave, atual)
+function consolidar(lojas, potencial, producao) {
+  // Mapa de Potencial por CNPJ (somente dígitos, para evitar diferenças de formatação).
+  // PORTE_LOJA é a categoria de potencial (ex: "D. 11-20 GRAVAMES").
+  // VOL_LEVES_PERFIL_CB é o Volume Mercado, QT_LEVES_PERFIL_CB é Ctos Merc.
+  const mapaPotencialPorCnpj = new Map()
+  for (const p of potencial) {
+    const chave = somenteDigitos(p.cnpj_loja)
+    if (!chave) continue
+    const atual = mapaPotencialPorCnpj.get(chave) || {
+      potencial_categoria: p.porte_loja || '',
+      volume_mercado: 0,
+      ctos_merc: 0,
+    }
+    atual.volume_mercado += Number(p.vol_leves_perfil_cb) || 0
+    atual.ctos_merc += Number(p.qt_leves_perfil_cb) || 0
+    if (!atual.potencial_categoria) atual.potencial_categoria = p.porte_loja || ''
+    mapaPotencialPorCnpj.set(chave, atual)
   }
 
-  return potencial.map((pot) => {
-    const codigo = String(pot.dn)
-    const loja = mapaLojas.get(codigo)
-    const m1 = producaoPorLojaEMes.get(`${codigo}|M1`) || { valor: 0, quantidade: 0 }
-    const m2 = producaoPorLojaEMes.get(`${codigo}|M2`) || { valor: 0, quantidade: 0 }
-    const m3 = producaoPorLojaEMes.get(`${codigo}|M3`) || { valor: 0, quantidade: 0 }
+  // Agrega Produção por DN e por posição de mês: soma do valor financiado
+  // e contagem de linhas (contratos) como "quantidade".
+  const producaoPorDnEMes = new Map() // chave: dn|mesPosicao -> { valor, quantidade }
+  for (const p of producao) {
+    const chave = `${p.dn}|${p.mes_posicao}`
+    const atual = producaoPorDnEMes.get(chave) || { valor: 0, quantidade: 0 }
+    atual.valor += Number(p.vlr_financiado) || 0
+    atual.quantidade += 1 // cada linha é um contrato
+    producaoPorDnEMes.set(chave, atual)
+  }
+
+  return lojas.map((loja) => {
+    const cnpjChave = somenteDigitos(loja.cnpj)
+    const dn = String(loja.dn || '')
+    const potencialLoja = mapaPotencialPorCnpj.get(cnpjChave) || {
+      potencial_categoria: '',
+      volume_mercado: 0,
+      ctos_merc: 0,
+    }
+    const m1 = producaoPorDnEMes.get(`${dn}|M1`) || { valor: 0, quantidade: 0 }
+    const m2 = producaoPorDnEMes.get(`${dn}|M2`) || { valor: 0, quantidade: 0 }
+    const m3 = producaoPorDnEMes.get(`${dn}|M3`) || { valor: 0, quantidade: 0 }
 
     return {
-      codigo,
-      razao_social: pot.razao_social || loja?.razao_loja || loja?.nome_fantasia || '',
-      bairro: pot.bairro || loja?.bairro || '',
-      zona: pot.zona || loja?.regiao || '',
-      gcm: pot.gcm || loja?.gcm || '',
-      status_loja: loja?.status_loja || '',
-      potencial: Number(pot.potencial) || 0,
-      mercado: Number(pot.mercado) || 0,
+      codigo: dn,
+      razao_social: loja.razao_social || '',
+      endereco: loja.endereco || '',
+      numero: loja.numero || '',
+      bairro: loja.bairro || '',
+      cep: loja.cep || '',
+      zona: loja.zona || '',
+      gcm: loja.gcm || '',
+      potencial_categoria: potencialLoja.potencial_categoria,
+      volume_mercado: potencialLoja.volume_mercado,
+      ctos_merc: potencialLoja.ctos_merc,
       producao_m1: m1.valor,
       qtd_m1: m1.quantidade,
       producao_m2: m2.valor,
