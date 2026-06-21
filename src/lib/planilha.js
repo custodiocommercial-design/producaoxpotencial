@@ -54,29 +54,71 @@ export function mapearLinha(linha, mapaColunas) {
   return resultado
 }
 
-/** Converte um valor de planilha (texto tipo "1.234.567,89" ou número) em número. */
+/**
+ * Converte um valor de planilha em número, aceitando tanto o formato
+ * brasileiro ("1.234.567,89") quanto o americano ("1,234,567.89" ou "R$ 71,708.01"),
+ * detectando automaticamente qual separador é o decimal.
+ */
 export function paraNumero(valor) {
   if (valor === '' || valor === null || valor === undefined) return null
   if (typeof valor === 'number') return valor
-  const texto = String(valor).trim()
+
+  let texto = String(valor).trim()
   if (texto === '-' || texto === '') return 0
-  // Remove separador de milhar (.) e troca vírgula decimal por ponto
-  const limpo = texto.replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '')
-  const numero = parseFloat(limpo)
+
+  // Remove qualquer símbolo de moeda, espaços e letras (ex: "R$ 71,708.01" -> "71,708.01")
+  texto = texto.replace(/[^\d.,-]/g, '')
+  if (texto === '' || texto === '-') return 0
+
+  const posUltimaVirgula = texto.lastIndexOf(',')
+  const posUltimoPonto = texto.lastIndexOf('.')
+
+  let textoLimpo
+  if (posUltimaVirgula === -1 && posUltimoPonto === -1) {
+    // Só dígitos, sem separador nenhum
+    textoLimpo = texto
+  } else if (posUltimaVirgula > posUltimoPonto) {
+    // A vírgula vem depois do ponto -> formato brasileiro (1.234,56)
+    // Ponto = separador de milhar (remover), vírgula = decimal (trocar por ponto)
+    textoLimpo = texto.replace(/\./g, '').replace(',', '.')
+  } else if (posUltimoPonto > posUltimaVirgula) {
+    // O ponto vem depois da vírgula -> formato americano (1,234.56)
+    // Vírgula = separador de milhar (remover), ponto = decimal (mantém)
+    textoLimpo = texto.replace(/,/g, '')
+  } else {
+    // Só um dos dois apareceu uma única vez (ex: "1234.56" ou "1234,56")
+    textoLimpo = texto.replace(',', '.')
+  }
+
+  const numero = parseFloat(textoLimpo)
   return isNaN(numero) ? null : numero
 }
 
-/** Converte uma data de planilha (Date, serial Excel, ou texto dd/mm/aaaa) para "AAAA-MM-DD". */
+/**
+ * Converte uma data de planilha (Date, serial Excel, "dd/mm/aaaa" ou "m/d/aa")
+ * para o formato "AAAA-MM-DD" usado pelo banco de dados.
+ */
 export function paraDataISO(valor) {
   if (!valor) return null
   if (valor instanceof Date) {
     return valor.toISOString().slice(0, 10)
   }
   const texto = String(valor).trim()
-  const match = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
-  if (match) {
-    const [, dia, mes, ano] = match
+
+  // Formato brasileiro: dd/mm/aaaa (ano com 4 dígitos)
+  const matchBr = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  if (matchBr) {
+    const [, dia, mes, ano] = matchBr
     return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`
   }
+
+  // Formato americano: m/d/aa ou m/d/aaaa (ano com 2 ou 4 dígitos)
+  const matchUs = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/)
+  if (matchUs) {
+    let [, mes, dia, ano] = matchUs
+    if (ano.length === 2) ano = `20${ano}` // assume século 2000+
+    return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`
+  }
+
   return null
 }
