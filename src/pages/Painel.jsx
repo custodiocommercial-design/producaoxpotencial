@@ -59,7 +59,7 @@ export default function Painel() {
       <header className="topo">
         <div className="marca">Painel <span className="x">×</span> Produção</div>
         <div className="usuario">
-          <span>{perfil?.email}</span>
+          <span>{perfil?.nome || perfil?.email}</span>
           <span className={`badge-papel ${ehAdmin ? 'admin' : 'visualizador'}`}>
             {ehAdmin ? 'Admin' : 'Visualizador'}
           </span>
@@ -117,14 +117,16 @@ export default function Painel() {
                 )}
               </div>
 
-              <div className="filtro-barra">
-                <select value={filtroGcm} onChange={(e) => setFiltroGcm(e.target.value)}>
-                  <option value="">Todos os GCM</option>
-                  {listaGcm.map((g) => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
-              </div>
+              {ehAdmin && (
+                <div className="filtro-barra">
+                  <select value={filtroGcm} onChange={(e) => setFiltroGcm(e.target.value)}>
+                    <option value="">Todos os GCM</option>
+                    {listaGcm.map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <TabelaPainel linhas={linhasFiltradas} metaMeses={metaMeses} />
             </div>
