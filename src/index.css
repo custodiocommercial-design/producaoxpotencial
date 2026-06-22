@@ -379,7 +379,6 @@ table.tabela-dados tbody td {
 /* Trunca o texto da célula com "..." em vez de quebrar linha ou expandir a coluna,
    equivalente à opção "Cortar" do Google Sheets. */
 .celula-truncar {
-  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
