@@ -58,31 +58,39 @@ function CabecalhoMes({ rotuloFixo, mesReferencia }) {
 // Define as colunas fixas (não-mês) da tabela: rótulo exibido + campo de dados correspondente.
 // "congelada" marca quais colunas ficam fixas ao rolar a tabela horizontalmente.
 // "truncar" marca quais colunas devem cortar o texto (com "...") em vez de quebrar linha ou expandir.
+// "largura" é OBRIGATÓRIA em todas as colunas aqui porque a tabela usa table-layout: fixed
+// (necessário para o cálculo de "left" das colunas congeladas ser sempre exato).
 const COLUNAS_FIXAS = [
-  { campo: 'codigo', rotulo: 'DN', congelada: true },
-  { campo: 'razao_social', rotulo: 'Razão social', congelada: true, truncar: true },
-  { campo: 'endereco', rotulo: 'Endereço', truncar: true },
-  { campo: 'numero', rotulo: 'Nº' },
-  { campo: 'bairro', rotulo: 'Bairro', truncar: true },
-  { campo: 'cep', rotulo: 'CEP' },
-  { campo: 'zona', rotulo: 'Zona' },
-  { campo: 'gcm', rotulo: 'GCM' },
-  { campo: 'potencial_categoria', rotulo: 'Potencial' },
+  { campo: 'codigo', rotulo: 'DN', congelada: true, largura: 70 },
+  { campo: 'razao_social', rotulo: 'Razão social', congelada: true, truncar: true, largura: 200 },
+  { campo: 'endereco', rotulo: 'Endereço', truncar: true, largura: 160 },
+  { campo: 'numero', rotulo: 'Nº', largura: 60 },
+  { campo: 'bairro', rotulo: 'Bairro', truncar: true, largura: 140 },
+  { campo: 'cep', rotulo: 'CEP', largura: 90 },
+  { campo: 'zona', rotulo: 'Zona', largura: 100 },
+  { campo: 'gcm', rotulo: 'GCM', largura: 160 },
+  { campo: 'potencial_categoria', rotulo: 'Potencial', largura: 140 },
 ]
 
-// Larguras fixas (em px) usadas para calcular o "left" de cada coluna congelada,
-// e aplicadas via style para manter DN e Razão social compactas mesmo truncando.
-const LARGURA_DN = 70
-const LARGURA_RAZAO_SOCIAL = 200
+const LARGURA_VOLUME_MERCADO = 130
+const LARGURA_CTOS_MERC = 90
+const LARGURA_MES = 120
+const LARGURA_CTOS = 70
 
-function estiloCongelado(campo) {
-  if (campo === 'codigo') {
-    return { position: 'sticky', left: 0, zIndex: 2, width: LARGURA_DN, minWidth: LARGURA_DN, maxWidth: LARGURA_DN }
+// Soma a largura de todas as colunas congeladas ANTES da coluna informada,
+// para calcular a posição "left" correta de cada uma (efeito empilhado, como no Sheets).
+function calcularLeft(indiceColuna) {
+  let soma = 0
+  for (let i = 0; i < indiceColuna; i++) {
+    if (COLUNAS_FIXAS[i].congelada) soma += COLUNAS_FIXAS[i].largura
   }
-  if (campo === 'razao_social') {
-    return { position: 'sticky', left: LARGURA_DN, zIndex: 2, width: LARGURA_RAZAO_SOCIAL, minWidth: LARGURA_RAZAO_SOCIAL, maxWidth: LARGURA_RAZAO_SOCIAL }
-  }
-  return undefined
+  return soma
+}
+
+function estiloColuna({ largura, congelada }, indiceColuna) {
+  const base = { width: largura, minWidth: largura, maxWidth: largura }
+  if (!congelada) return base
+  return { ...base, position: 'sticky', left: calcularLeft(indiceColuna), zIndex: 2 }
 }
 
 export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definirFiltroColuna }) {
@@ -144,14 +152,27 @@ export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definir
       </div>
 
       <div className="tabela-scroll" ref={refScrollTabela}>
-        <table className="tabela-dados" ref={refTabela}>
+        <table className="tabela-dados tabela-layout-fixo" ref={refTabela}>
+          <colgroup>
+            {COLUNAS_FIXAS.map(({ campo, largura }) => (
+              <col key={campo} style={{ width: largura }} />
+            ))}
+            <col style={{ width: LARGURA_VOLUME_MERCADO }} />
+            <col style={{ width: LARGURA_CTOS_MERC }} />
+            <col style={{ width: LARGURA_MES }} />
+            <col style={{ width: LARGURA_CTOS }} />
+            <col style={{ width: LARGURA_MES }} />
+            <col style={{ width: LARGURA_CTOS }} />
+            <col style={{ width: LARGURA_MES }} />
+            <col style={{ width: LARGURA_CTOS }} />
+          </colgroup>
           <thead>
             <tr>
-              {COLUNAS_FIXAS.map(({ campo, rotulo, congelada, truncar }) => (
+              {COLUNAS_FIXAS.map(({ campo, rotulo, congelada, truncar }, indice) => (
                 <th
                   key={campo}
                   className={`${congelada ? 'celula-congelada' : ''} ${truncar ? 'celula-truncar' : ''}`}
-                  style={estiloCongelado(campo)}
+                  style={estiloColuna(COLUNAS_FIXAS[indice], indice)}
                 >
                   <div className="cabecalho-coluna">
                     <span>{rotulo}</span>
@@ -177,8 +198,8 @@ export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definir
           <tbody>
             {linhas.map((l) => (
               <tr key={l.codigo}>
-                <td className="celula-congelada" style={estiloCongelado('codigo')}>{l.codigo}</td>
-                <td className="celula-congelada celula-truncar" style={estiloCongelado('razao_social')} title={l.razao_social}>{l.razao_social}</td>
+                <td className="celula-congelada" style={estiloColuna(COLUNAS_FIXAS[0], 0)}>{l.codigo}</td>
+                <td className="celula-congelada celula-truncar" style={estiloColuna(COLUNAS_FIXAS[1], 1)} title={l.razao_social}>{l.razao_social}</td>
                 <td className="celula-truncar" title={l.endereco}>{l.endereco}</td>
                 <td>{l.numero}</td>
                 <td className="celula-truncar" title={l.bairro}>{l.bairro}</td>
