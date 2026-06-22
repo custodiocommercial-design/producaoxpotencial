@@ -52,7 +52,9 @@ a { color: inherit; text-decoration: none; }
 /* ---------- Layout geral ---------- */
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden; /* a página em si não rola; quem rola é a tabela internamente */
 }
 
 .topo {
@@ -113,10 +115,12 @@ a { color: inherit; text-decoration: none; }
 
 .conteudo {
   flex: 1;
-  padding: 28px;
-  max-width: 1400px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* permite que os filhos com overflow funcionem corretamente dentro do flex */
+  padding: 20px 28px;
   width: 100%;
+  overflow-y: auto; /* caso o conteúdo acima da tabela (KPIs, mensagens) não caiba, rola só essa área */
 }
 
 /* ---------- KPIs ---------- */
@@ -195,12 +199,32 @@ a { color: inherit; text-decoration: none; }
                           por cima de elementos fora deste bloco */
 }
 
+/* O bloco que contém a tabela principal cresce para ocupar todo o espaço
+   vertical restante da tela, em vez de ter altura fixa em vh. */
+.bloco-tabela-principal {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* essencial para o filho com overflow funcionar dentro do flex */
+}
+
 .bloco-cabecalho {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
   border-bottom: 1px solid var(--linha);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Envolve a barra de rolagem extra + a área da tabela; precisa ser flex-column
+   para que o "flex: 1" do .tabela-scroll realmente ocupe o espaço disponível. */
+.wrapper-tabela-painel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .bloco-cabecalho h2 {
@@ -297,8 +321,8 @@ a { color: inherit; text-decoration: none; }
 .tabela-scroll {
   overflow-x: auto;
   overflow-y: scroll;
-  height: 70vh;
-  max-height: 70vh;
+  flex: 1;
+  min-height: 0; /* essencial dentro de flex column para o overflow funcionar */
   position: relative;
   scrollbar-color: #B8BEC8 #EDEFF2; /* Firefox: thumb e track em tons de cinza */
   border-radius: 0 0 6px 6px;
