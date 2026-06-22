@@ -394,7 +394,6 @@ table.tabela-dados tbody td {
 
 thead th.celula-congelada {
   background: var(--grafite-2);
-  z-index: 3;
 }
 
 /* Sombra sutil na borda direita da área congelada, para marcar visualmente
