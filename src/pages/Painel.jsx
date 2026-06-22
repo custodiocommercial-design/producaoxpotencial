@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { useDadosPainel } from '../hooks/useDadosPainel.js'
 import { useUploads } from '../hooks/useUploads.js'
-import Kpis from '../components/Kpis.jsx'
-import EsteiraDeMeses from '../components/EsteiraDeMeses.jsx'
-import BotaoUpload from '../components/BotaoUpload.jsx'
-import TabelaPainel from '../components/TabelaPainel.jsx'
+import MenuLateral from '../components/MenuLateral.jsx'
+import PaginaPainel from './PaginaPainel.jsx'
+import PaginaDashboard from './PaginaDashboard.jsx'
+import PaginaUpload from './PaginaUpload.jsx'
 
 export default function Painel() {
   const { perfil, ehAdmin, sair } = useAuth()
@@ -13,6 +13,8 @@ export default function Painel() {
   const [mensagem, setMensagem] = useState(null) // { texto, ehErro }
   const [confirmandoNovoMes, setConfirmandoNovoMes] = useState(null) // arquivo aguardando confirmação
   const [filtrosColuna, setFiltrosColuna] = useState({}) // { nomeCampo: valorFiltro }
+  const [secaoAtiva, setSecaoAtiva] = useState('painel') // 'painel' | 'dashboard' | 'upload'
+  const [menuExpandido, setMenuExpandido] = useState(true)
 
   function aoConcluirUpload(texto, ehErro = false) {
     setMensagem({ texto, ehErro })
@@ -39,6 +41,10 @@ export default function Painel() {
     setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }))
   }
 
+  // Visualizadores não têm acesso à seção de Upload — se por algum motivo a
+  // seção ativa for "upload" e o usuário não for admin, volta para o Painel.
+  const secaoEfetiva = !ehAdmin && secaoAtiva === 'upload' ? 'painel' : secaoAtiva
+
   const linhasFiltradas = useMemo(() => {
     return linhasConsolidadas.filter((linha) =>
       Object.entries(filtrosColuna).every(([campo, valorFiltro]) => {
@@ -50,7 +56,7 @@ export default function Painel() {
   }, [linhasConsolidadas, filtrosColuna])
 
   return (
-    <div className="app-shell" style={{ flexDirection: 'column' }}>
+    <div className="app-shell">
       <header className="topo">
         <div className="marca">Painel <span className="x">×</span> Produção</div>
         <div className="usuario">
@@ -62,71 +68,43 @@ export default function Painel() {
         </div>
       </header>
 
-      <main className="conteudo">
-        {mensagem && (
-          <div className={mensagem.ehErro ? 'erro-form' : 'aviso-sucesso'}>{mensagem.texto}</div>
-        )}
+      <div className="corpo-com-menu">
+        <MenuLateral
+          secaoAtiva={secaoEfetiva}
+          definirSecaoAtiva={setSecaoAtiva}
+          expandido={menuExpandido}
+          alternarExpandido={() => setMenuExpandido((v) => !v)}
+          ehAdmin={ehAdmin}
+        />
 
-        <EsteiraDeMeses metaMeses={metaMeses} />
+        <main className="conteudo">
+          {mensagem && (
+            <div className={mensagem.ehErro ? 'erro-form' : 'aviso-sucesso'}>{mensagem.texto}</div>
+          )}
 
-        {carregando ? (
-          <div className="status-carregando">Carregando dados…</div>
-        ) : (
-          <>
-            <Kpis linhas={linhasConsolidadas} metaMeses={metaMeses} />
-
-            <div className="bloco bloco-tabela-principal">
-              <div className="bloco-cabecalho">
-                <h2>Bases de dados</h2>
-                {ehAdmin && (
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    <BotaoUpload
-                      rotulo="Potencial"
-                      processando={processando === 'potencial'}
-                      aoSelecionar={uploadPotencial}
-                    />
-                    <BotaoUpload
-                      rotulo="Lojas"
-                      processando={processando === 'lojas'}
-                      aoSelecionar={uploadLojas}
-                    />
-                    <BotaoUpload
-                      rotulo="Produção M3"
-                      processando={processando === 'M3'}
-                      aoSelecionar={(arq) => uploadProducao(arq, 'M3')}
-                      ultimaAtualizacao={metaMeses.M3}
-                    />
-                    <BotaoUpload
-                      rotulo="Produção M2"
-                      processando={processando === 'M2'}
-                      aoSelecionar={(arq) => uploadProducao(arq, 'M2')}
-                      ultimaAtualizacao={metaMeses.M2}
-                    />
-                    <BotaoUpload
-                      rotulo="Produção M1"
-                      processando={processando === 'M1'}
-                      aoSelecionar={(arq) => uploadProducao(arq, 'M1')}
-                      ultimaAtualizacao={metaMeses.M1}
-                    />
-                    <BotaoUpload
-                      rotulo="Novo mês"
-                      processando={processando === 'NOVO_MES'}
-                      aoSelecionar={aoEscolherArquivoNovoMes}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <TabelaPainel
-                linhas={linhasFiltradas}
-                metaMeses={metaMeses}
-                filtrosColuna={filtrosColuna}
-                definirFiltroColuna={definirFiltroColuna}
-              />
-            </div>
-          </>
-        )}
-      </main>
+          {carregando ? (
+            <div className="status-carregando">Carregando dados…</div>
+          ) : secaoEfetiva === 'dashboard' ? (
+            <PaginaDashboard linhas={linhasConsolidadas} metaMeses={metaMeses} />
+          ) : secaoEfetiva === 'upload' ? (
+            <PaginaUpload
+              metaMeses={metaMeses}
+              processando={processando}
+              uploadPotencial={uploadPotencial}
+              uploadLojas={uploadLojas}
+              uploadProducao={uploadProducao}
+              aoEscolherArquivoNovoMes={aoEscolherArquivoNovoMes}
+            />
+          ) : (
+            <PaginaPainel
+              linhas={linhasFiltradas}
+              metaMeses={metaMeses}
+              filtrosColuna={filtrosColuna}
+              definirFiltroColuna={definirFiltroColuna}
+            />
+          )}
+        </main>
+      </div>
 
       {confirmandoNovoMes && (
         <div className="modal-fundo" role="dialog" aria-modal="true">
