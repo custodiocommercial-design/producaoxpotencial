@@ -10,10 +10,9 @@ import TabelaPainel from '../components/TabelaPainel.jsx'
 export default function Painel() {
   const { perfil, ehAdmin, sair } = useAuth()
   const { linhasConsolidadas, metaMeses, carregando, recarregar } = useDadosPainel()
-  const [filtroGcm, setFiltroGcm] = useState('')
   const [mensagem, setMensagem] = useState(null) // { texto, ehErro }
-  const [modalRotacao, setModalRotacao] = useState(null) // { arquivo } quando aguardando confirmação
-  const [rotuloNovoM1, setRotuloNovoM1] = useState('')
+  const [confirmandoNovoMes, setConfirmandoNovoMes] = useState(null) // arquivo aguardando confirmação
+  const [filtrosColuna, setFiltrosColuna] = useState({}) // { nomeCampo: valorFiltro }
 
   function aoConcluirUpload(texto, ehErro = false) {
     setMensagem({ texto, ehErro })
@@ -21,38 +20,34 @@ export default function Painel() {
     setTimeout(() => setMensagem(null), 6000)
   }
 
-  const { processando, uploadPotencial, uploadLojas, uploadProducao } = useUploads({ aoConcluir: aoConcluirUpload })
+  const { processando, uploadPotencial, uploadLojas, uploadProducao, uploadNovoMes } = useUploads({ aoConcluir: aoConcluirUpload })
 
-  const listaGcm = useMemo(() => {
-    const conjunto = new Set(linhasConsolidadas.map((l) => l.gcm).filter(Boolean))
-    return Array.from(conjunto).sort()
-  }, [linhasConsolidadas])
-
-  const linhasFiltradas = useMemo(() => {
-    if (!filtroGcm) return linhasConsolidadas
-    return linhasConsolidadas.filter((l) => l.gcm === filtroGcm)
-  }, [linhasConsolidadas, filtroGcm])
-
-  function aoSelecionarArquivoM1(arquivo) {
-    // Pede o rótulo do mês e confirma a rotação antes de processar.
-    // Resolve a Promise imediatamente — o upload de fato só roda
-    // depois da confirmação no modal (confirmarRotacaoEEnviar).
-    setModalRotacao({ arquivo })
+  function aoEscolherArquivoNovoMes(arquivo) {
+    // Pede confirmação antes de rotacionar a esteira; o upload de fato
+    // só roda depois que o usuário confirmar no modal.
+    setConfirmandoNovoMes(arquivo)
     return Promise.resolve()
   }
 
-  function confirmarRotacaoEEnviar() {
-    const arquivo = modalRotacao.arquivo
-    setModalRotacao(null)
-    const rotulo = rotuloNovoM1.trim() || null
-    uploadProducao(arquivo, 'M1', rotulo)
-    setRotuloNovoM1('')
+  function confirmarNovoMes() {
+    const arquivo = confirmandoNovoMes
+    setConfirmandoNovoMes(null)
+    uploadNovoMes(arquivo)
   }
 
-  function cancelarRotacao() {
-    setModalRotacao(null)
-    setRotuloNovoM1('')
+  function definirFiltroColuna(campo, valor) {
+    setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }))
   }
+
+  const linhasFiltradas = useMemo(() => {
+    return linhasConsolidadas.filter((linha) =>
+      Object.entries(filtrosColuna).every(([campo, valorFiltro]) => {
+        if (!valorFiltro) return true
+        const valorLinha = String(linha[campo] ?? '').toLowerCase()
+        return valorLinha.includes(String(valorFiltro).toLowerCase())
+      })
+    )
+  }, [linhasConsolidadas, filtrosColuna])
 
   return (
     <div className="app-shell" style={{ flexDirection: 'column' }}>
@@ -98,63 +93,53 @@ export default function Painel() {
                     <BotaoUpload
                       rotulo="Produção M3"
                       processando={processando === 'M3'}
-                      aoSelecionar={(arq) => uploadProducao(arq, 'M3', null)}
+                      aoSelecionar={(arq) => uploadProducao(arq, 'M3')}
                       ultimaAtualizacao={metaMeses.M3}
                     />
                     <BotaoUpload
                       rotulo="Produção M2"
                       processando={processando === 'M2'}
-                      aoSelecionar={(arq) => uploadProducao(arq, 'M2', null)}
+                      aoSelecionar={(arq) => uploadProducao(arq, 'M2')}
                       ultimaAtualizacao={metaMeses.M2}
                     />
                     <BotaoUpload
-                      rotulo="Produção M1 (atual)"
+                      rotulo="Produção M1"
                       processando={processando === 'M1'}
-                      aoSelecionar={aoSelecionarArquivoM1}
+                      aoSelecionar={(arq) => uploadProducao(arq, 'M1')}
                       ultimaAtualizacao={metaMeses.M1}
+                    />
+                    <BotaoUpload
+                      rotulo="Novo mês"
+                      processando={processando === 'NOVO_MES'}
+                      aoSelecionar={aoEscolherArquivoNovoMes}
                     />
                   </div>
                 )}
               </div>
 
-              {ehAdmin && (
-                <div className="filtro-barra">
-                  <select value={filtroGcm} onChange={(e) => setFiltroGcm(e.target.value)}>
-                    <option value="">Todos os GCM</option>
-                    {listaGcm.map((g) => (
-                      <option key={g} value={g}>{g}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <TabelaPainel linhas={linhasFiltradas} metaMeses={metaMeses} />
+              <TabelaPainel
+                linhas={linhasFiltradas}
+                metaMeses={metaMeses}
+                filtrosColuna={filtrosColuna}
+                definirFiltroColuna={definirFiltroColuna}
+              />
             </div>
           </>
         )}
       </main>
 
-      {modalRotacao && (
+      {confirmandoNovoMes && (
         <div className="modal-fundo" role="dialog" aria-modal="true">
           <div className="modal-caixa">
             <h3>Avançar a esteira de meses?</h3>
             <p>
-              O conteúdo atual de M1 ({metaMeses.M1 || 'sem rótulo'}) será movido para M2,
+              O conteúdo atual de M1 ({metaMeses.M1 || 'sem dados'}) será movido para M2,
               o conteúdo de M2 será movido para M3, e o M3 atual será descartado.
+              O arquivo selecionado entra como o novo M1.
             </p>
-            <div className="campo">
-              <label htmlFor="rotuloMes">Nome do novo mês (ex: Junho/2026)</label>
-              <input
-                id="rotuloMes"
-                type="text"
-                value={rotuloNovoM1}
-                onChange={(e) => setRotuloNovoM1(e.target.value)}
-                placeholder="Junho/2026"
-              />
-            </div>
             <div className="modal-acoes">
-              <button className="btn-secundario" onClick={cancelarRotacao}>Cancelar</button>
-              <button className="btn-primario" style={{ width: 'auto', padding: '8px 16px' }} onClick={confirmarRotacaoEEnviar}>
+              <button className="btn-secundario" onClick={() => setConfirmandoNovoMes(null)}>Cancelar</button>
+              <button className="btn-primario" style={{ width: 'auto', padding: '8px 16px' }} onClick={confirmarNovoMes}>
                 Confirmar e avançar
               </button>
             </div>
