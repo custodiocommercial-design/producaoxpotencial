@@ -154,7 +154,7 @@ export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definir
   }
 
   return (
-    <div>
+    <div className="wrapper-tabela-painel">
       {/* Barra de rolagem horizontal extra, logo abaixo do cabeçalho */}
       <div className="scroll-horizontal-extra" ref={refScrollSuperior}>
         <div style={{ width: larguraTabela || '100%', height: 1 }} />
