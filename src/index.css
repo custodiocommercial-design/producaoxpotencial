@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Poppins:wght@400;500;600&display=swap');
 
 :root {
   --grafite: #1C2128;
@@ -16,8 +16,8 @@
   --texto-suave: #8A93A3;
 
   --fonte-display: 'Space Grotesk', sans-serif;
-  --fonte-corpo: 'Inter', sans-serif;
-  --fonte-dados: 'IBM Plex Mono', monospace;
+  --fonte-corpo: 'Poppins', sans-serif;
+  --fonte-dados: 'Poppins', sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -293,18 +293,86 @@ table.tabela-dados thead th {
   border-bottom: 1px solid var(--linha-escura);
 }
 
+.cabecalho-coluna {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filtro-coluna {
+  font-family: var(--fonte-corpo);
+  font-size: 0.68rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 3px 6px;
+  border: 1px solid var(--linha-escura);
+  border-radius: 3px;
+  background: var(--grafite);
+  color: var(--texto-claro);
+  width: 100%;
+  min-width: 80px;
+  max-width: 140px;
+}
+
+.filtro-coluna:focus {
+  outline: 1px solid var(--petroleo-claro);
+  background: var(--grafite-2);
+}
+
+.filtro-coluna option {
+  color: var(--grafite);
+  background: var(--branco);
+}
+
 table.tabela-dados tbody td {
   padding: 7px 12px;
   border-bottom: 1px solid var(--linha);
   color: var(--grafite);
 }
 
-table.tabela-dados tbody tr:hover {
-  background: var(--superficie);
+/* Trunca o texto da célula com "..." em vez de quebrar linha ou expandir a coluna,
+   equivalente à opção "Cortar" do Google Sheets. */
+.celula-truncar {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Mantém DN e Razão social visíveis ao rolar a tabela horizontalmente,
+   equivalente a "Congelar colunas" do Google Sheets. */
+.celula-congelada {
+  position: sticky;
+  background: var(--branco);
+}
+
+thead th.celula-congelada {
+  background: var(--grafite-2);
+  z-index: 3;
+}
+
+/* Sombra sutil na borda direita da área congelada, para marcar visualmente
+   onde o conteúdo fixo termina e o conteúdo rolável começa. */
+tbody tr td.celula-congelada:nth-child(2),
+thead tr th.celula-congelada:nth-child(2) {
+  box-shadow: 2px 0 4px -1px rgba(0, 0, 0, 0.15);
 }
 
 table.tabela-dados tbody tr:nth-child(even) {
   background: rgba(43, 103, 119, 0.02);
+}
+
+table.tabela-dados tbody tr:nth-child(even) td.celula-congelada {
+  background: #FAFCFC;
+}
+
+table.tabela-dados tbody tr:hover {
+  background: var(--superficie);
+}
+
+table.tabela-dados tbody tr:hover td.celula-congelada {
+  background: var(--superficie);
 }
 
 .num-positivo { color: var(--salvia); }
