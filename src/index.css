@@ -190,6 +190,9 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid var(--linha);
   border-radius: 6px;
   margin-bottom: 24px;
+  isolation: isolate; /* cria um novo contexto de empilhamento, evitando
+                          que o cabeçalho sticky da tabela "vaze" visualmente
+                          por cima de elementos fora deste bloco */
 }
 
 .bloco-cabecalho {
@@ -293,7 +296,8 @@ a { color: inherit; text-decoration: none; }
 
 .tabela-scroll {
   overflow-x: auto;
-  overflow-y: auto;
+  overflow-y: scroll;
+  height: 70vh;
   max-height: 70vh;
   position: relative;
   scrollbar-color: #B8BEC8 #EDEFF2; /* Firefox: thumb e track em tons de cinza */
