@@ -87,10 +87,19 @@ function calcularLeft(indiceColuna) {
   return soma
 }
 
-function estiloColuna({ largura, congelada }, indiceColuna) {
+function estiloColuna({ largura, congelada }, indiceColuna, ehCabecalho = false) {
   const base = { width: largura, minWidth: largura, maxWidth: largura }
   if (!congelada) return base
-  return { ...base, position: 'sticky', left: calcularLeft(indiceColuna), zIndex: 2 }
+  return {
+    ...base,
+    position: 'sticky',
+    left: calcularLeft(indiceColuna),
+    // Células de canto (congeladas + dentro do cabeçalho) precisam também
+    // de "top: 0" e do z-index mais alto, para ficarem por cima tanto das
+    // colunas comuns quanto das linhas comuns ao rolar nos dois sentidos.
+    top: ehCabecalho ? 0 : undefined,
+    zIndex: ehCabecalho ? 4 : 2,
+  }
 }
 
 export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definirFiltroColuna }) {
@@ -172,7 +181,7 @@ export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definir
                 <th
                   key={campo}
                   className={`${congelada ? 'celula-congelada' : ''} ${truncar ? 'celula-truncar' : ''}`}
-                  style={estiloColuna(COLUNAS_FIXAS[indice], indice)}
+                  style={estiloColuna(COLUNAS_FIXAS[indice], indice, true)}
                 >
                   <div className="cabecalho-coluna">
                     <span>{rotulo}</span>
