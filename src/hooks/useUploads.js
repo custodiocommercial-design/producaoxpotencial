@@ -78,55 +78,22 @@ export function useUploads({ aoConcluir }) {
     }
   }
 
-  async function uploadProducao(arquivo, posicaoMes, rotuloMes) {
+  /**
+   * Sobe um arquivo de Produção em uma posição específica (M1, M2 ou M3),
+   * SUBSTITUINDO apenas o conteúdo daquela posição — sem empurrar nada.
+   * Use isto para corrigir/atualizar um mês já existente.
+   */
+  async function uploadProducao(arquivo, posicaoMes) {
     setProcessando(posicaoMes)
     try {
-      const linhasBrutas = await lerArquivoPlanilha(arquivo)
-      const linhas = linhasBrutas
-        .map((linha) => {
-          const mapeada = mapearLinha(linha, MAPA_PRODUCAO)
-          if (!mapeada.dealer) return null
+      const linhas = await prepararLinhasProducao(arquivo, posicaoMes)
 
-          // Separa o campo DEALER bruto ("60441-NOME DA LOJA") em código + nome,
-          // equivalente ao "Texto por colunas" do Excel usando "-" como delimitador.
-          const { dn, dealer_nome } = separarDealer(mapeada.dealer)
-          mapeada.dn = dn
-          mapeada.dealer_nome = dealer_nome
-          delete mapeada.dealer // não existe essa coluna na tabela; guardamos dn e dealer_nome
-
-          mapeada.pagamento = paraDataISO(mapeada.pagamento)
-          for (const campo of CAMPOS_NUMERICOS_PRODUCAO) {
-            mapeada[campo] = paraNumero(mapeada[campo])
-          }
-          mapeada.mes_posicao = posicaoMes
-          return mapeada
-        })
-        .filter(Boolean)
-
-      if (linhas.length === 0) {
-        throw new Error('Nenhuma linha válida encontrada no arquivo (verifique se a coluna DEALER está preenchida).')
-      }
-
-      // Se for upload em M1, roda a rotação M1->M2->M3 ANTES de inserir o novo conteúdo
-      if (posicaoMes === 'M1') {
-        const { error: erroRpc } = await supabase.rpc('rotacionar_producao')
-        if (erroRpc) throw erroRpc
-      } else {
-        // Upload direto em M2 ou M3: substitui apenas aquela posição
-        const { error: erroDelete } = await supabase.from('producao').delete().eq('mes_posicao', posicaoMes)
-        if (erroDelete) throw erroDelete
-      }
-
+      const { error: erroDelete } = await supabase.from('producao').delete().eq('mes_posicao', posicaoMes)
+      if (erroDelete) throw erroDelete
       await inserirEmLotes('producao', linhas)
 
-      // Atualiza o rótulo do mês (ex: "Junho/2026") na posição M1
-      if (posicaoMes === 'M1') {
-        const { error: erroMeta } = await supabase
-          .from('producao_meta')
-          .update({ rotulo_mes: rotuloMes, atualizado_em: new Date().toISOString() })
-          .eq('mes_posicao', 'M1')
-        if (erroMeta) throw erroMeta
-      }
+      const { error: erroRecalc } = await supabase.rpc('recalcular_rotulo_mes', { p_mes_posicao: posicaoMes })
+      if (erroRecalc) throw erroRecalc
 
       aoConcluir?.(`Produção (${posicaoMes}) atualizada: ${linhas.length} lançamentos carregados.`)
     } catch (e) {
@@ -136,5 +103,61 @@ export function useUploads({ aoConcluir }) {
     }
   }
 
-  return { processando, uploadPotencial, uploadLojas, uploadProducao }
+  /**
+   * Sobe um arquivo de Produção como o NOVO mês mais recente: primeiro
+   * empurra a esteira (M1 atual -> M2, M2 atual -> M3, M3 antigo é
+   * descartado), e então insere o arquivo novo na posição M1.
+   */
+  async function uploadNovoMes(arquivo) {
+    setProcessando('NOVO_MES')
+    try {
+      const linhas = await prepararLinhasProducao(arquivo, 'M1')
+
+      const { error: erroRotacao } = await supabase.rpc('rotacionar_producao')
+      if (erroRotacao) throw erroRotacao
+
+      await inserirEmLotes('producao', linhas)
+
+      const { error: erroRecalc } = await supabase.rpc('recalcular_rotulo_mes', { p_mes_posicao: 'M1' })
+      if (erroRecalc) throw erroRecalc
+
+      aoConcluir?.(`Novo mês carregado em M1: ${linhas.length} lançamentos. A esteira foi avançada (M1→M2→M3).`)
+    } catch (e) {
+      aoConcluir?.(`Erro ao subir Novo mês: ${e.message}`, true)
+    } finally {
+      setProcessando(null)
+    }
+  }
+
+  /** Lê e prepara as linhas do arquivo de Produção (lógica compartilhada pelos dois uploads acima). */
+  async function prepararLinhasProducao(arquivo, posicaoMes) {
+    const linhasBrutas = await lerArquivoPlanilha(arquivo)
+    const linhas = linhasBrutas
+      .map((linha) => {
+        const mapeada = mapearLinha(linha, MAPA_PRODUCAO)
+        if (!mapeada.dealer) return null
+
+        // Separa o campo DEALER bruto ("60441-NOME DA LOJA") em código + nome,
+        // equivalente ao "Texto por colunas" do Excel usando "-" como delimitador.
+        const { dn, dealer_nome } = separarDealer(mapeada.dealer)
+        mapeada.dn = dn
+        mapeada.dealer_nome = dealer_nome
+        delete mapeada.dealer // não existe essa coluna na tabela; guardamos dn e dealer_nome
+
+        mapeada.pagamento = paraDataISO(mapeada.pagamento)
+        for (const campo of CAMPOS_NUMERICOS_PRODUCAO) {
+          mapeada[campo] = paraNumero(mapeada[campo])
+        }
+        mapeada.mes_posicao = posicaoMes
+        return mapeada
+      })
+      .filter(Boolean)
+
+    if (linhas.length === 0) {
+      throw new Error('Nenhuma linha válida encontrada no arquivo (verifique se a coluna DEALER está preenchida).')
+    }
+    return linhas
+  }
+
+  return { processando, uploadPotencial, uploadLojas, uploadProducao, uploadNovoMes }
 }
