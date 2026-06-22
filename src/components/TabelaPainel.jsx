@@ -1,3 +1,5 @@
+import FiltroColuna from './FiltroColuna.jsx'
+
 function formatarMoeda(valor) {
   if (!valor) return <span className="num-vazio">—</span>
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(valor)
@@ -40,9 +42,39 @@ function BadgePotencial({ valor }) {
   )
 }
 
-export default function TabelaPainel({ linhas, metaMeses }) {
+// Define as colunas fixas (não-mês) da tabela: rótulo exibido + campo de dados correspondente.
+// "congelada" marca quais colunas ficam fixas ao rolar a tabela horizontalmente.
+// "truncar" marca quais colunas devem cortar o texto (com "...") em vez de quebrar linha ou expandir.
+const COLUNAS_FIXAS = [
+  { campo: 'codigo', rotulo: 'DN', congelada: true },
+  { campo: 'razao_social', rotulo: 'Razão social', congelada: true, truncar: true },
+  { campo: 'endereco', rotulo: 'Endereço', truncar: true },
+  { campo: 'numero', rotulo: 'Nº' },
+  { campo: 'bairro', rotulo: 'Bairro', truncar: true },
+  { campo: 'cep', rotulo: 'CEP' },
+  { campo: 'zona', rotulo: 'Zona' },
+  { campo: 'gcm', rotulo: 'GCM' },
+  { campo: 'potencial_categoria', rotulo: 'Potencial' },
+]
+
+// Larguras fixas (em px) usadas para calcular o "left" de cada coluna congelada,
+// e aplicadas via style para manter DN e Razão social compactas mesmo truncando.
+const LARGURA_DN = 70
+const LARGURA_RAZAO_SOCIAL = 200
+
+function estiloCongelado(campo) {
+  if (campo === 'codigo') {
+    return { position: 'sticky', left: 0, zIndex: 2, width: LARGURA_DN, minWidth: LARGURA_DN, maxWidth: LARGURA_DN }
+  }
+  if (campo === 'razao_social') {
+    return { position: 'sticky', left: LARGURA_DN, zIndex: 2, width: LARGURA_RAZAO_SOCIAL, minWidth: LARGURA_RAZAO_SOCIAL, maxWidth: LARGURA_RAZAO_SOCIAL }
+  }
+  return undefined
+}
+
+export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definirFiltroColuna }) {
   if (linhas.length === 0) {
-    return <div className="vazio-estado">Nenhum dado carregado ainda. Use os botões de upload acima para começar.</div>
+    return <div className="vazio-estado">Nenhum dado encontrado. Use os botões de upload acima, ou ajuste os filtros.</div>
   }
 
   return (
@@ -50,15 +82,23 @@ export default function TabelaPainel({ linhas, metaMeses }) {
       <table className="tabela-dados">
         <thead>
           <tr>
-            <th>DN</th>
-            <th>Razão social</th>
-            <th>Endereço</th>
-            <th>Nº</th>
-            <th>Bairro</th>
-            <th>CEP</th>
-            <th>Zona</th>
-            <th>GCM</th>
-            <th>Potencial</th>
+            {COLUNAS_FIXAS.map(({ campo, rotulo, congelada, truncar }) => (
+              <th
+                key={campo}
+                className={`${congelada ? 'celula-congelada' : ''} ${truncar ? 'celula-truncar' : ''}`}
+                style={estiloCongelado(campo)}
+              >
+                <div className="cabecalho-coluna">
+                  <span>{rotulo}</span>
+                  <FiltroColuna
+                    campo={campo}
+                    linhas={linhas}
+                    valorAtual={filtrosColuna[campo]}
+                    onMudar={definirFiltroColuna}
+                  />
+                </div>
+              </th>
+            ))}
             <th>Volume Mercado</th>
             <th>Ctos Merc</th>
             <th>{metaMeses.M3 || 'M3'}</th>
@@ -72,11 +112,11 @@ export default function TabelaPainel({ linhas, metaMeses }) {
         <tbody>
           {linhas.map((l) => (
             <tr key={l.codigo}>
-              <td>{l.codigo}</td>
-              <td>{l.razao_social}</td>
-              <td>{l.endereco}</td>
+              <td className="celula-congelada" style={estiloCongelado('codigo')}>{l.codigo}</td>
+              <td className="celula-congelada celula-truncar" style={estiloCongelado('razao_social')} title={l.razao_social}>{l.razao_social}</td>
+              <td className="celula-truncar" title={l.endereco}>{l.endereco}</td>
               <td>{l.numero}</td>
-              <td>{l.bairro}</td>
+              <td className="celula-truncar" title={l.bairro}>{l.bairro}</td>
               <td>{l.cep}</td>
               <td>{l.zona}</td>
               <td>{l.gcm}</td>
