@@ -75,7 +75,7 @@ export default function Painel() {
           <>
             <Kpis linhas={linhasConsolidadas} metaMeses={metaMeses} />
 
-            <div className="bloco">
+            <div className="bloco bloco-tabela-principal">
               <div className="bloco-cabecalho">
                 <h2>Bases de dados</h2>
                 {ehAdmin && (
