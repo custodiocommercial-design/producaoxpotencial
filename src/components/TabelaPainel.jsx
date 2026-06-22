@@ -61,15 +61,15 @@ function CabecalhoMes({ rotuloFixo, mesReferencia }) {
 // "largura" é OBRIGATÓRIA em todas as colunas aqui porque a tabela usa table-layout: fixed
 // (necessário para o cálculo de "left" das colunas congeladas ser sempre exato).
 const COLUNAS_FIXAS = [
-  { campo: 'codigo', rotulo: 'DN', congelada: true, largura: 70 },
+  { campo: 'codigo', rotulo: 'DN', congelada: true, truncar: true, largura: 70 },
   { campo: 'razao_social', rotulo: 'Razão social', congelada: true, truncar: true, largura: 200 },
   { campo: 'endereco', rotulo: 'Endereço', truncar: true, largura: 160 },
-  { campo: 'numero', rotulo: 'Nº', largura: 60 },
+  { campo: 'numero', rotulo: 'Nº', truncar: true, largura: 60 },
   { campo: 'bairro', rotulo: 'Bairro', truncar: true, largura: 140 },
-  { campo: 'cep', rotulo: 'CEP', largura: 90 },
-  { campo: 'zona', rotulo: 'Zona', largura: 100 },
-  { campo: 'gcm', rotulo: 'GCM', largura: 160 },
-  { campo: 'potencial_categoria', rotulo: 'Potencial', largura: 140 },
+  { campo: 'cep', rotulo: 'CEP', truncar: true, largura: 90 },
+  { campo: 'zona', rotulo: 'Zona', truncar: true, largura: 120 },
+  { campo: 'gcm', rotulo: 'GCM', truncar: true, largura: 190 },
+  { campo: 'potencial_categoria', rotulo: 'Potencial', truncar: true, largura: 140 },
 ]
 
 const LARGURA_VOLUME_MERCADO = 130
@@ -207,14 +207,14 @@ export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definir
           <tbody>
             {linhas.map((l) => (
               <tr key={l.codigo}>
-                <td className="celula-congelada" style={estiloColuna(COLUNAS_FIXAS[0], 0)}>{l.codigo}</td>
+                <td className="celula-congelada celula-truncar" style={estiloColuna(COLUNAS_FIXAS[0], 0)} title={l.codigo}>{l.codigo}</td>
                 <td className="celula-congelada celula-truncar" style={estiloColuna(COLUNAS_FIXAS[1], 1)} title={l.razao_social}>{l.razao_social}</td>
                 <td className="celula-truncar" title={l.endereco}>{l.endereco}</td>
-                <td>{l.numero}</td>
+                <td className="celula-truncar" title={l.numero}>{l.numero}</td>
                 <td className="celula-truncar" title={l.bairro}>{l.bairro}</td>
-                <td>{l.cep}</td>
-                <td>{l.zona}</td>
-                <td>{l.gcm}</td>
+                <td className="celula-truncar" title={l.cep}>{l.cep}</td>
+                <td className="celula-truncar" title={l.zona}>{l.zona}</td>
+                <td className="celula-truncar" title={l.gcm}>{l.gcm}</td>
                 <td><BadgePotencial valor={l.potencial_categoria} /></td>
                 <td>{formatarMoeda(l.volume_mercado)}</td>
                 <td>{formatarNumero(l.ctos_merc)}</td>
