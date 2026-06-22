@@ -308,6 +308,10 @@ table.tabela-dados {
   white-space: nowrap;
 }
 
+table.tabela-layout-fixo {
+  table-layout: fixed;
+}
+
 table.tabela-dados thead th {
   position: sticky;
   top: 0;
