@@ -590,12 +590,12 @@ table.tabela-dados tbody tr.linha-alerta-sem-producao td.celula-congelada {
   background: #FBEAEA;
 }
 
-/* Loja que produziu em apenas 1 dos últimos 3 meses: fundo laranja/âmbar. */
+/* Loja que produziu em apenas 1 dos últimos 3 meses: fundo amarelo. */
 table.tabela-dados tbody tr.linha-alerta-producao-baixa {
-  background: rgba(217, 142, 63, 0.14);
+  background: rgba(240, 200, 30, 0.22);
 }
 table.tabela-dados tbody tr.linha-alerta-producao-baixa td.celula-congelada {
-  background: #FCEFE0;
+  background: #FCF6D9;
 }
 
 /* Hover continua tendo prioridade visual sobre os alertas, para não
@@ -607,10 +607,10 @@ table.tabela-dados tbody tr.linha-alerta-sem-producao:hover td.celula-congelada 
   background: #F6D7D7;
 }
 table.tabela-dados tbody tr.linha-alerta-producao-baixa:hover {
-  background: rgba(217, 142, 63, 0.22);
+  background: rgba(240, 200, 30, 0.32);
 }
 table.tabela-dados tbody tr.linha-alerta-producao-baixa:hover td.celula-congelada {
-  background: #F8E2C4;
+  background: #F9ED9F;
 }
 
 .num-positivo { color: var(--salvia); }
