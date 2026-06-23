@@ -60,17 +60,18 @@ a { color: inherit; text-decoration: none; }
 .topo {
   background: var(--grafite);
   color: var(--branco);
-  padding: 18px 28px;
+  padding: 10px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--linha-escura);
+  flex-shrink: 0;
 }
 
 .topo .marca {
   font-family: var(--fonte-display);
   font-weight: 700;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   letter-spacing: -0.01em;
   display: flex;
   align-items: baseline;
@@ -199,7 +200,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   min-height: 0; /* permite que os filhos com overflow funcionem corretamente dentro do flex */
-  padding: 20px 28px;
+  padding: 10px 14px;
   width: 100%;
   overflow-y: auto; /* caso o conteúdo acima da tabela (KPIs, mensagens) não caiba, rola só essa área */
 }
@@ -343,6 +344,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   min-height: 0; /* essencial para o filho com overflow funcionar dentro do flex */
+  margin-bottom: 0; /* é o único bloco da página, não precisa de respiro abaixo */
 }
 
 .bloco-cabecalho {
@@ -577,6 +579,38 @@ table.tabela-dados tbody tr:hover {
 
 table.tabela-dados tbody tr:hover td.celula-congelada {
   background: var(--superficie);
+}
+
+/* ---------- Alertas de produção por linha ---------- */
+/* Loja sem nenhuma produção em M1, M2 e M3 (parada há 3 meses): fundo vermelho. */
+table.tabela-dados tbody tr.linha-alerta-sem-producao {
+  background: rgba(176, 65, 62, 0.12);
+}
+table.tabela-dados tbody tr.linha-alerta-sem-producao td.celula-congelada {
+  background: #FBEAEA;
+}
+
+/* Loja que produziu em apenas 1 dos últimos 3 meses: fundo laranja/âmbar. */
+table.tabela-dados tbody tr.linha-alerta-producao-baixa {
+  background: rgba(217, 142, 63, 0.14);
+}
+table.tabela-dados tbody tr.linha-alerta-producao-baixa td.celula-congelada {
+  background: #FCEFE0;
+}
+
+/* Hover continua tendo prioridade visual sobre os alertas, para não
+   "esconder" o destaque ao passar o mouse, apenas escurece levemente. */
+table.tabela-dados tbody tr.linha-alerta-sem-producao:hover {
+  background: rgba(176, 65, 62, 0.2);
+}
+table.tabela-dados tbody tr.linha-alerta-sem-producao:hover td.celula-congelada {
+  background: #F6D7D7;
+}
+table.tabela-dados tbody tr.linha-alerta-producao-baixa:hover {
+  background: rgba(217, 142, 63, 0.22);
+}
+table.tabela-dados tbody tr.linha-alerta-producao-baixa:hover td.celula-congelada {
+  background: #F8E2C4;
 }
 
 .num-positivo { color: var(--salvia); }
