@@ -102,6 +102,20 @@ function estiloColuna({ largura, congelada }, indiceColuna, ehCabecalho = false)
   }
 }
 
+// Calcula um alerta visual baseado na produção dos últimos 3 meses (M1, M2, M3):
+// - "sem-producao": os 3 meses estão zerados (loja parada há 3 meses)
+// - "producao-baixa": produziu em apenas 1 dos 3 meses
+// - null: produziu em 2 ou 3 meses (sem alerta)
+function calcularAlertaProducao(linha) {
+  const mesesComProducao = [linha.producao_m1, linha.producao_m2, linha.producao_m3].filter(
+    (valor) => Number(valor) > 0
+  ).length
+
+  if (mesesComProducao === 0) return 'sem-producao'
+  if (mesesComProducao === 1) return 'producao-baixa'
+  return null
+}
+
 export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definirFiltroColuna }) {
   const refScrollSuperior = useRef(null)
   const refScrollTabela = useRef(null)
@@ -205,27 +219,30 @@ export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definir
             </tr>
           </thead>
           <tbody>
-            {linhas.map((l) => (
-              <tr key={l.codigo}>
-                <td className="celula-congelada celula-truncar" style={estiloColuna(COLUNAS_FIXAS[0], 0)} title={l.codigo}>{l.codigo}</td>
-                <td className="celula-congelada celula-truncar" style={estiloColuna(COLUNAS_FIXAS[1], 1)} title={l.razao_social}>{l.razao_social}</td>
-                <td className="celula-truncar" title={l.endereco}>{l.endereco}</td>
-                <td className="celula-truncar" title={l.numero}>{l.numero}</td>
-                <td className="celula-truncar" title={l.bairro}>{l.bairro}</td>
-                <td className="celula-truncar" title={l.cep}>{l.cep}</td>
-                <td className="celula-truncar" title={l.zona}>{l.zona}</td>
-                <td className="celula-truncar" title={l.gcm}>{l.gcm}</td>
-                <td><BadgePotencial valor={l.potencial_categoria} /></td>
-                <td>{formatarMoeda(l.volume_mercado)}</td>
-                <td>{formatarNumero(l.ctos_merc)}</td>
-                <td>{formatarMoeda(l.producao_m3)}</td>
-                <td>{formatarNumero(l.qtd_m3)}</td>
-                <td>{formatarMoeda(l.producao_m2)}</td>
-                <td>{formatarNumero(l.qtd_m2)}</td>
-                <td>{formatarMoeda(l.producao_m1)}</td>
-                <td>{formatarNumero(l.qtd_m1)}</td>
-              </tr>
-            ))}
+            {linhas.map((l) => {
+              const alerta = calcularAlertaProducao(l)
+              return (
+                <tr key={l.codigo} className={alerta ? `linha-alerta-${alerta}` : ''}>
+                  <td className="celula-congelada celula-truncar" style={estiloColuna(COLUNAS_FIXAS[0], 0)} title={l.codigo}>{l.codigo}</td>
+                  <td className="celula-congelada celula-truncar" style={estiloColuna(COLUNAS_FIXAS[1], 1)} title={l.razao_social}>{l.razao_social}</td>
+                  <td className="celula-truncar" title={l.endereco}>{l.endereco}</td>
+                  <td className="celula-truncar" title={l.numero}>{l.numero}</td>
+                  <td className="celula-truncar" title={l.bairro}>{l.bairro}</td>
+                  <td className="celula-truncar" title={l.cep}>{l.cep}</td>
+                  <td className="celula-truncar" title={l.zona}>{l.zona}</td>
+                  <td className="celula-truncar" title={l.gcm}>{l.gcm}</td>
+                  <td><BadgePotencial valor={l.potencial_categoria} /></td>
+                  <td>{formatarMoeda(l.volume_mercado)}</td>
+                  <td>{formatarNumero(l.ctos_merc)}</td>
+                  <td>{formatarMoeda(l.producao_m3)}</td>
+                  <td>{formatarNumero(l.qtd_m3)}</td>
+                  <td>{formatarMoeda(l.producao_m2)}</td>
+                  <td>{formatarNumero(l.qtd_m2)}</td>
+                  <td>{formatarMoeda(l.producao_m1)}</td>
+                  <td>{formatarNumero(l.qtd_m1)}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
