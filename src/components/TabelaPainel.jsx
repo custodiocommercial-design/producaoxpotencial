@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import FiltroColuna from './FiltroColuna.jsx'
+import CelulaMetaEditavel from './CelulaMetaEditavel.jsx'
+import IconeLmConsig from './IconeLmConsig.jsx'
 
 function formatarMoeda(valor) {
   if (!valor) return <span className="num-vazio">—</span>
@@ -76,6 +78,9 @@ const LARGURA_VOLUME_MERCADO = 130
 const LARGURA_CTOS_MERC = 90
 const LARGURA_MES = 120
 const LARGURA_CTOS = 70
+const LARGURA_META = 120
+const LARGURA_GAP = 120
+const LARGURA_LM_CONSIG = 90
 
 // Soma a largura de todas as colunas congeladas ANTES da coluna informada,
 // para calcular a posição "left" correta de cada uma (efeito empilhado, como no Sheets).
@@ -116,7 +121,7 @@ function calcularAlertaProducao(linha) {
   return null
 }
 
-export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definirFiltroColuna }) {
+export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definirFiltroColuna, salvarMeta, alternarLmConsig }) {
   const refScrollSuperior = useRef(null)
   const refScrollTabela = useRef(null)
   const refTabela = useRef(null)
@@ -188,6 +193,9 @@ export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definir
             <col style={{ width: LARGURA_CTOS }} />
             <col style={{ width: LARGURA_MES }} />
             <col style={{ width: LARGURA_CTOS }} />
+            <col style={{ width: LARGURA_META }} />
+            <col style={{ width: LARGURA_GAP }} />
+            <col style={{ width: LARGURA_LM_CONSIG }} />
           </colgroup>
           <thead>
             <tr>
@@ -216,6 +224,9 @@ export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definir
               <th>Ctos</th>
               <th><CabecalhoMes rotuloFixo="M1" mesReferencia={metaMeses.M1} /></th>
               <th>Ctos</th>
+              <th>Meta CDC Prem</th>
+              <th>GAP</th>
+              <th>LM Consig</th>
             </tr>
           </thead>
           <tbody>
@@ -240,6 +251,15 @@ export default function TabelaPainel({ linhas, metaMeses, filtrosColuna, definir
                   <td>{formatarNumero(l.qtd_m2)}</td>
                   <td>{formatarMoeda(l.producao_m1)}</td>
                   <td>{formatarNumero(l.qtd_m1)}</td>
+                  <td>
+                    <CelulaMetaEditavel dn={l.codigo} valorAtual={l.meta_cdc_prem} aoSalvar={salvarMeta} />
+                  </td>
+                  <td className={l.gap !== null && l.gap > 0 ? 'gap-nao-atingido' : ''}>
+                    {l.gap === null ? <span className="num-vazio">—</span> : formatarMoeda(l.gap)}
+                  </td>
+                  <td>
+                    <IconeLmConsig dn={l.codigo} ativo={l.lm_consig_ativo} aoAlternar={alternarLmConsig} />
+                  </td>
                 </tr>
               )
             })}
