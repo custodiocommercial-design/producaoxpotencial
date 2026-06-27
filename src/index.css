@@ -261,6 +261,21 @@ a { color: inherit; text-decoration: none; }
   background: rgba(217, 142, 63, 0.04);
 }
 
+.btn-baixar-modelo {
+  background: transparent;
+  border: none;
+  color: var(--petroleo);
+  font-size: 0.74rem;
+  padding: 2px 0;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.15s ease;
+}
+.btn-baixar-modelo:hover {
+  text-decoration-color: var(--petroleo);
+}
+
 /* ---------- KPIs ---------- */
 .kpis {
   display: grid;
@@ -616,6 +631,75 @@ table.tabela-dados tbody tr.linha-alerta-producao-baixa:hover td.celula-congelad
 .num-positivo { color: var(--salvia); }
 .num-negativo { color: var(--tijolo); }
 .num-vazio { color: var(--texto-suave); }
+
+/* ---------- Meta CDC Prem (célula editável) ---------- */
+.btn-adicionar-meta {
+  background: transparent;
+  border: 1px dashed var(--linha);
+  color: var(--texto-suave);
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+.btn-adicionar-meta:hover {
+  border-color: var(--petroleo);
+  color: var(--petroleo);
+  border-style: solid;
+}
+
+.valor-meta-definido {
+  background: transparent;
+  border: none;
+  color: var(--grafite);
+  font-family: var(--fonte-dados);
+  font-size: 0.78rem;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 0.15s ease;
+}
+.valor-meta-definido:hover {
+  background: var(--superficie);
+  text-decoration: underline;
+}
+
+.input-meta-editavel {
+  width: 100%;
+  font-family: var(--fonte-dados);
+  font-size: 0.78rem;
+  padding: 4px 6px;
+  border: 1px solid var(--petroleo);
+  border-radius: 3px;
+  background: var(--branco);
+  color: var(--grafite);
+}
+
+/* GAP: quando a meta ainda não foi atingida (gap > 0), o valor fica em vermelho. */
+.gap-nao-atingido {
+  color: var(--tijolo) !important;
+  font-weight: 500;
+}
+
+/* ---------- Ícone LM Consig (carro clicável) ---------- */
+.icone-lm-consig {
+  background: transparent;
+  border: none;
+  color: var(--texto-suave); /* cinza = inativo */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.icone-lm-consig:hover {
+  background: var(--superficie);
+}
+.icone-lm-consig.ativo {
+  color: var(--salvia); /* verde = ativo */
+}
 
 /* ---------- Tela de login ---------- */
 .tela-login {
