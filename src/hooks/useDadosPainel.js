@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { useMetasLoja } from './useMetasLoja.js'
 
 export function useDadosPainel() {
   const [potencial, setPotencial] = useState([])
@@ -7,6 +8,7 @@ export function useDadosPainel() {
   const [producao, setProducao] = useState([])
   const [metaMeses, setMetaMeses] = useState({ M1: null, M2: null, M3: null })
   const [carregando, setCarregando] = useState(true)
+  const { metasPorDn, salvarMeta, alternarLmConsig } = useMetasLoja()
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -34,17 +36,21 @@ export function useDadosPainel() {
   }, [carregar])
 
   // Consolida a partir de Lojas (cadastro base), cruzando com Potencial pelo
-  // CNPJ e com Produção pelo código DN.
-  const linhasConsolidadas = consolidar(lojas, potencial, producao)
+  // CNPJ, com Produção pelo código DN, e com Metas/LM Consig (também por DN).
+  const linhasConsolidadas = consolidar(lojas, potencial, producao, metasPorDn)
 
-  return { potencial, lojas, producao, metaMeses, linhasConsolidadas, carregando, recarregar: carregar }
+  return {
+    potencial, lojas, producao, metaMeses, linhasConsolidadas, carregando,
+    recarregar: carregar,
+    salvarMeta, alternarLmConsig,
+  }
 }
 
 function somenteDigitos(texto) {
   return String(texto || '').replace(/\D/g, '')
 }
 
-function consolidar(lojas, potencial, producao) {
+function consolidar(lojas, potencial, producao, metasPorDn) {
   // Mapa de Potencial por CNPJ (somente dígitos, para evitar diferenças de formatação).
   // PORTE_LOJA é a categoria de potencial (ex: "D. 11-20 GRAVAMES").
   // VOL_LEVES_PERFIL_CB é o Volume Mercado, QT_LEVES_PERFIL_CB é Ctos Merc.
@@ -86,6 +92,12 @@ function consolidar(lojas, potencial, producao) {
     const m2 = producaoPorDnEMes.get(`${dn}|M2`) || { valor: 0, quantidade: 0 }
     const m3 = producaoPorDnEMes.get(`${dn}|M3`) || { valor: 0, quantidade: 0 }
 
+    const metaLoja = metasPorDn?.get(dn)
+    const metaCdcPrem = metaLoja?.meta_cdc_prem ?? null
+    const lmConsigAtivo = metaLoja?.lm_consig_ativo ?? false
+    // GAP = Meta - Produção do mês atual (M1). Só calculado quando há meta definida.
+    const gap = metaCdcPrem !== null ? metaCdcPrem - m1.valor : null
+
     return {
       codigo: dn,
       razao_social: loja.razao_social || '',
@@ -104,6 +116,9 @@ function consolidar(lojas, potencial, producao) {
       qtd_m2: m2.quantidade,
       producao_m3: m3.valor,
       qtd_m3: m3.quantidade,
+      meta_cdc_prem: metaCdcPrem,
+      gap,
+      lm_consig_ativo: lmConsigAtivo,
     }
   })
 }
