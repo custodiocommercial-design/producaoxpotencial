@@ -9,7 +9,7 @@ import PaginaUpload from './PaginaUpload.jsx'
 
 export default function Painel() {
   const { perfil, ehAdmin, sair } = useAuth()
-  const { linhasConsolidadas, metaMeses, carregando, recarregar } = useDadosPainel()
+  const { linhasConsolidadas, metaMeses, carregando, recarregar, salvarMeta, alternarLmConsig } = useDadosPainel()
   const [mensagem, setMensagem] = useState(null) // { texto, ehErro }
   const [confirmandoNovoMes, setConfirmandoNovoMes] = useState(null) // arquivo aguardando confirmação
   const [filtrosColuna, setFiltrosColuna] = useState({}) // { nomeCampo: valorFiltro }
@@ -101,6 +101,8 @@ export default function Painel() {
               metaMeses={metaMeses}
               filtrosColuna={filtrosColuna}
               definirFiltroColuna={definirFiltroColuna}
+              salvarMeta={salvarMeta}
+              alternarLmConsig={alternarLmConsig}
             />
           )}
         </main>
